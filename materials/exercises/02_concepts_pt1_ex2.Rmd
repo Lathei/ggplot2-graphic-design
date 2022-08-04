@@ -7,15 +7,7 @@ format: html
 
 # Exercise 2
 
-- Explore the TfL bike sharing data visually:  
-  **create a boxplot of counts per weather type**
-    * Turn the plot into a jitter strips plot (random noise across the x axis)
-    * Combine both chart types (jittered points on top of the boxplots)
-    * [Bonus: sort the boxplot-jitter hybrid by median counts]{style="color:#5DB699;"}
-    * Apply your favorite theme to the plot.
-    * Add meaningful labels.
-    * [Bonus: Explore other chart types to visualize the distributions.]{style="color:#5DB699;"}
-- Save the plot as a vector graphic with a decent plot size.
+
 
 ## Data import
 
@@ -33,9 +25,25 @@ bikes
 ```
 
 ## Boxplot of counts per weather type
+    * [Bonus: sort the boxplot-jitter hybrid by median counts]{style="color:#5DB699;"}
+    * Apply your favorite theme to the plot.
+    * Add meaningful labels.
+    * [Bonus: Explore other chart types to visualize the distributions.]{style="color:#5DB699;"}
+- Save the plot as a vector graphic with a decent plot size.
 
 ```{r plot}
+data_summary <- function(x) {
+   m <- mean(x)
+   ymin <- m-sd(x)
+   ymax <- m+sd(x)
+   return(c(y=m,ymin=ymin,ymax=ymax))
+}
 
+ggplot(bikes, aes(x=reorder(weather_type, count), y = count))+
+  geom_jitter(aes(color=day_night), alpha=0.3)+ 
+  geom_violin(alpha=0.6)+
+  stat_summary(fun.data=data_summary, mult=1, 
+                 geom="pointrange", width=0.8)
 ```
 
   

@@ -4,24 +4,7 @@ subtitle: "Concepts of the {ggplot2} Package Pt. 1"
 author: "Your Name"
 format: html
 ---
-
-# Exercise 1
-
-- Explore the TfL bike share data visually:  
-  **create a timeseries of reported bike shares on weekend days**
-    * Highlight day and night encoded by colors and shapes.
-    * Connect the points of each period with lines.
-        + What is the difference between `geom_line()` and `geom_path()`?
-    * Apply your favorite theme to the plot.
-    * Add meaningful labels.
-- Save the plot as a vector graphic with a decent plot size.
-
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = TRUE, warning = FALSE, 
-                      dev = "ragg_png", dpi = 300, retina = 1)
-Sys.setlocale("LC_TIME", "C")
-```
+Notes
 
 ## Data import
 
@@ -39,10 +22,58 @@ bikes
 ```
 
 
+
+    Create a scatter plot of temp_feel vs temp.
+        Map the color of the points to clear weather.
+        Map the size of the points to count.
+        Turn the points into diamonds.
+        Bonus: What do you notice in the legend? How could you fix it?
+
+```{r}
+ggplot(bikes, aes(x=temp_feel, y=temp))+
+  geom_point(aes(fill=weather_type == "clear",
+                 size = count),
+                 shape = 23,   # makes a triangle 
+                 color="black",
+                 alpha = .5)
+
+
+
+
+```
+
+```{r}
+ggplot(
+    bikes,
+    aes(x = temp_feel, y = count,
+        color = season,
+        group = day_night)
+  ) +
+  geom_point(
+    alpha = .5
+  ) +
+  geom_smooth(
+    method = "lm",
+    color = "black"
+  )
+```
+
+
 ## Timeseries of reported bike shares on weekend days
 
-```{r plot}
 
+```{r plot}
+ggplot(bikes %>% filter(is_weekend==T), aes(x=date, y=count,
+                 color = day_night))+
+  geom_point(aes(shape = day_night),
+             size = 3,
+             alpha = 0.6)+
+  geom_line() +
+  theme_linedraw()+
+  labs(
+    title = "bike rentals compared night and day 2015 to 2017",
+    tag = "vis 1"
+  )
 ```
 
   
