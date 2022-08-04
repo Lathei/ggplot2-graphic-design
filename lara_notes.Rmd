@@ -1,0 +1,240 @@
+---
+title: "Notes_Lara"
+output: html_document
+date: "2022-08-04"
+---
+# general infos and tips
+https://www.data-to-viz.com
+https://datavizproject.com/
+https://visualizationuniverse.com/charts/
+
+## Data import
+shows bike rentals 
+```{r preparation, warning=FALSE, message=FALSE}
+library(tidyverse)
+
+bikes <- read_csv(
+  "https://raw.githubusercontent.com/z3tt/graphic-design-ggplot2/main/data/london-bikes-custom.csv", 
+  col_types = "Dcfffilllddddc"
+)
+
+bikes$season <- fct_inorder(bikes$season)
+
+bikes
+```
+
+# aesthetics 
+
+- we set constant propeties outside aes()
+- … and map data-related properties inside aes()
+- local settings and mappings override global properties
+- grouping allows applying layers for subsets
+
+shape is fixed and can be looked up online.
+```{r}
+ggplot(bikes, aes(x=temp_feel, y=temp))+
+  geom_point(aes(fill=weather_type == "clear",
+                 size = count),
+                 shape = 23,   # makes a triangle 
+                 color="black",
+                 alpha = .5)
+
+```
+
+global aestethics: grouping indicates that geom smoothe is over the gouping variable day/night. 
+```{r}
+ggplot(
+    bikes,
+    aes(x = temp_feel, y = count,
+        color = season,
+        group = day_night)
+  ) +
+  geom_point(
+    alpha = .5
+  ) +
+  geom_smooth(
+    method = "lm",
+    color = "black"
+  )+
+  geom_rug(
+    alpha = .2
+  )+
+  labs(
+    x = "Feels-like temperature (°F)",
+    y = "Reported bike shares",
+    title = "TfL bike sharing trends",
+    color = "Season:",                                                           # titel of color legend
+    subtitle = "Reported bike rents versus feels-like temperature in London",
+    caption = "Data: TfL",
+    tag = "Fig. 1"
+  )+ theme_light(
+  base_size = 14,
+  base_family = "Courier-Italic" # schriftart
+)+theme(
+  panel.grid.minor = element_blank(),           # entfernt kleine Zwischenlinien
+  plot.title = element_text(face = "bold"),    #macht titel fett
+  plot.title.position = "plot",                # schiebt titel nach links 
+  legend.position = "top")  
+
+```
+# statistical 
+
+```{r}
+data_summary <- function(x) {
+   m <- mean(x)
+   ymin <- m-sd(x)
+   ymax <- m+sd(x)
+   return(c(y=m,ymin=ymin,ymax=ymax))  # function to draw mean line 
+}
+
+ggplot(bikes, aes(x=reorder(weather_type, count), y = count))+   #reorders weather type by mean of count variable
+  geom_jitter(aes(color=day_night), alpha=0.3)+ 
+  geom_violin(alpha=0.6)+
+  stat_summary(fun.data=data_summary, mult=1, 
+                 geom="pointrange", width=0.8)+
+  facet_wrap(
+    ~ is_workday + day_night ,     # kann facet_wraps mit mehreren Konditionen gleichzeitig machen
+    scales = "free_y"               # passt y scala bei jedem quadrant individuell an
+  )
+```
+
+other mean to sort bars, if variable is a factor
+```{r}
+aes(y = fct_rev(        # from large to little
+      fct_infreq(weather_type)
+    ))
+
+aes(y = fct_infreq(weather_type)) # from little to large
+```
+
+
+# scales
+
+scale_objekt: kann x, y, farbe, form sein
+scale_objekt_typ: kontinuierlich, diskret, zahl
+
+
+
+    continuous(), discrete(), reverse(), log10(), sqrt(), date() for positions
+
+    continuous(), discrete(), manual(), gradient(), gradient2(), brewer() for colors
+
+    continuous(), discrete(), manual(), ordinal(), area(), date() for sizes
+
+    continuous(), discrete(), manual(), ordinal() for shapes
+
+    continuous(), discrete(), manual(), ordinal(), date() for transparency
+
+careful when adjusting axis limits 
+    scale_*_continuous(limits) removes the data outside the range
+    coord_*(*lim) keeps the data and zooms into the range
+
+```{r}
+ggplot(
+    bikes,
+    aes(x = date, y = count,
+        color = season)
+  ) +
+  geom_point() +
+  scale_x_date(
+    date_breaks = "4 months",
+    date_labels = "%b '%y"
+  ) +
+  #scale_y_log10()  #dies würde die y achse logarithmieren 
+  #scale_y_continuous(   #logarithmiert ebenfalls 
+   # trans = "log10"
+  #)+ 
+  scale_y_continuous(
+    breaks = c(0, seq(5000, 30000, by = 2500), 40000, 50000),  #macht zwischen 5000-30000 feinere Abstände
+    limits = c(NA, 60000),  #Achsenlänge
+    #expand = c(0, 0),  #wo ist das Kreuz
+  ) +
+  scale_color_discrete(
+    name = "Season:",
+    type = RColorBrewer::brewer.pal(
+      n = 4, name = "Set1")  #überschreibt das color aes argument zu Beginn
+  )
+
+RColorBrewer::display.brewer.pal(n = 4, name = "Set1")
+
+```
+# circular coordinate system
+```{r}
+ggplot(
+    filter(bikes, !is.na(weather_type)),
+    aes(x = weather_type,
+        fill = weather_type)
+  ) +
+  geom_bar() +
+  coord_polar()
+
+ggplot(
+    filter(bikes, !is.na(weather_type)),
+    aes(x = fct_infreq(weather_type),
+        fill = weather_type)
+  ) +
+  geom_bar() +
+  coord_polar(theta = "y")
+```
+## klassisches Kuchen Diagramm
+```{r}
+ggplot(
+    filter(bikes, !is.na(weather_type)),
+    aes(x = 1,
+        fill = fct_rev(fct_infreq(weather_type)))
+  ) +
+  geom_bar(position = "stack") +
+  coord_polar(theta = "y")
+```
+
+## klassisches geschichtetes Diagramm 
+```{r}
+ggplot(
+    filter(bikes, !is.na(weather_type)),
+    aes(x = 1,
+        fill = fct_rev(fct_infreq(weather_type)))
+  ) +
+  geom_bar(position = "stack") +
+  coord_cartesian()
+```
+## Lolipop Diagramm with two variables
+```{r}
+ggplot(bikes, aes(x = as.numeric(season), y = count, group = season)) +
+  stat_summary(geom = "point", fun = "sum", size = 3) +                          # Summe der counts pro Season
+  stat_summary(geom = "linerange", ymin = 0, fun.max = function(y) sum(y)) +     # Linie von 0 bis zur SUmme von Y pro Gruppe
+  stat_summary(
+    geom = "text", aes(label = season, y = 0),                                  # fügt Season Name bei Y=0 ein
+    family = "Cabinet Grotesk", fontface = "bold", size = 4.5, hjust = 1.15
+  ) +
+  annotate(
+    geom = "linerange", xmin = .7, xmax = 4.3, y = 0                            # fügt Linie auf Y=0 von x=0.7 bis 4.3 ein
+  ) +
+  coord_polar(theta = "y") +                                                    # dreht alles basierend auf der y Achse
+  scale_x_discrete(expand = c(.5, .5)) +
+  scale_y_continuous(limits = c(0, 7.5*10^6)) +                                 # vergrössert die y Achse, damit Punkte schön Abstand haben
+  theme_void() +                                                               # Theme void nimmt alle Beschriftung raus
+  theme(plot.margin = margin(rep(-130, 4)))
+```
+
+
+
+# systemfonts 
+register_variant(): This function is a wrapper around register_font() that allows you to easily create variants of existing system fonts, e.g. to target different weights and/or widths, or for attaching OpenType features to a font. 
+
+system_fonts(): shows all system fonts
+
+```{r}
+systemfonts::system_fonts() %>%   
+  filter(str_detect(family, "Courier")) %>%
+  pull(name, weight) %>%
+  sort()
+
+
+tst <- systemfonts::register_variant(
+  name = "Courier-Italic",
+  family = "Courier",
+  weight = "normal",
+  features = systemfonts::font_feature(letters = "stylistic")
+)
+```
+
