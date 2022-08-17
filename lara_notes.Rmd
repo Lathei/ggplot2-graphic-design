@@ -419,6 +419,36 @@ ggplot(bikes, aes(x = as.numeric(season), y = count, group = season)) +
   theme_void() +                                                               # Theme void nimmt alle Beschriftung raus
   theme(plot.margin = margin(rep(-130, 4)))
 ```
+# legend position
+```{r}
+ggplot(
+    bikes,
+    aes(x = temp_feel, y = count,
+        color = humidity)
+  ) +
+  geom_point() +
+  scale_color_viridis_c(guide = guide_colorsteps(
+      title.position = "top",       # puts the title of the legend on top
+      title.hjust = .5,
+      show.limits = TRUE,          # black frame around color interval in legend
+      frame.colour = "black",
+      frame.linewidth = 3,
+      barwidth = unit(8, "lines")) +
+  theme(
+    legend.position = "bottom",
+    legend.justification = "left" # shows were to go on the bottom
+  )+ # or
+  theme(
+    legend.position = c(.25, .85),
+    legend.direction = "horizontal"
+  )
+
+
+  )
+
+
+```
+
 
 # colors
 
@@ -502,5 +532,37 @@ tst <- systemfonts::register_variant(
   weight = "normal",
   features = systemfonts::font_feature(letters = "stylistic")
 )
+```
+
+# patchwork
+
+combine multiple ggplots
+
+library(patchwork)
+
+{patchwork} is the most modern and simplest way to compose plots
+
+    use +, / and | to combine plots
+    use plot_layout() to adjust the layout, widths and heights
+    use plot_annotation() to add tags and general labels
+    use inset_element() to add inset graphics
+
+
+```{r}
+library(patchwork)
+(p1 + p2) / p3   # two on top, one on the bottom
+
+(p1 + p2) / p3 & theme(legend.position = "none", plot.background = element_rect(color = "black", size = 3)) # draws black lines around plots
+```
+
+## overall titel
+```{r}
+(pl1 + pl2) / pl3 +
+plot_annotation(tag_levels = "1", tag_prefix = "P", title = "An overarching title for all 3 plots, placed on the very top while all other titles are sitting below the tags.")
+```
+
+## add plot into plot
+```{r}
+pl1 + inset_element(pl2, l = .6, b = .1, r = 1, t = .6)
 ```
 
